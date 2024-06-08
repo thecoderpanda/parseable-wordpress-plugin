@@ -1,8 +1,8 @@
-Here is a detailed README file for your WordPress plugin. You can use this as a template and update it as needed for your GitHub repository.
 
----
 
-# Log Ingestor WordPress Plugin
+
+# 
+Log Ingestor WordPress Plugin
 
 ## Description
 
