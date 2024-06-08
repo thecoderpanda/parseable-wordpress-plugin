@@ -1,29 +1,27 @@
 <?php
 /*
-Plugin Name: Log Ingestor
-Description: Ingests system logs, PHP logs, theme logs, plugin logs, and sends them to a Parseable instance.
+Plugin Name: WP Logs to Parseable
+Description: Ingests WordPress logs and pushes them to Parseable.
 Version: 1.0
-Author: Shantanu Vishwanadha
+Author: Shantanu
 */
 
 if (!defined('ABSPATH')) {
-    exit; // Exit if accessed directly
+    exit; // Exit if accessed directly.
 }
 
-// Include necessary files
-include_once plugin_dir_path(__FILE__) . 'includes/class-log-ingestor.php';
-include_once plugin_dir_path(__FILE__) . 'includes/class-settings.php';
+// Include the admin settings.
+require_once(plugin_dir_path(__FILE__) . 'includes/admin-settings.php');
+require_once(plugin_dir_path(__FILE__) . 'includes/logging-functions.php');
 
-// Initialize the plugin
-function log_ingestor_init() {
-    $log_ingestor = new Log_Ingestor();
-    $log_ingestor->init();
-}
-add_action('plugins_loaded', 'log_ingestor_init');
+// Initialize the plugin.
+add_action('plugins_loaded', 'wp_logs_to_parseable_init');
 
-// Initialize settings
-function log_ingestor_settings_init() {
-    $settings = new Log_Ingestor_Settings();
-    $settings->init();
+function wp_logs_to_parseable_init() {
+    // Schedule the log pushing to Parseable.
+    if (!wp_next_scheduled('wp_logs_to_parseable_push_logs')) {
+        wp_schedule_event(time(), 'hourly', 'wp_logs_to_parseable_push_logs');
+    }
 }
-add_action('admin_init', 'log_ingestor_settings_init');
+
+add_action('wp_logs_to_parseable_push_logs', 'wp_logs_to_parseable_push_logs_to_parseable');
