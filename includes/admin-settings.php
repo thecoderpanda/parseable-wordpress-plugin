@@ -4,8 +4,11 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly.
 }
 
+require_once(plugin_dir_path(__FILE__) . 'class-parseable-api.php');
+
 add_action('admin_menu', 'wp_logs_to_parseable_admin_menu');
 add_action('admin_init', 'wp_logs_to_parseable_settings_init');
+add_action('wp_ajax_fetch_parseable_streams', 'wp_logs_to_parseable_fetch_streams');
 
 function wp_logs_to_parseable_admin_menu() {
     add_options_page(
@@ -91,19 +94,24 @@ function wp_logs_to_parseable_password_render() {
 function wp_logs_to_parseable_streams_render() {
     $options = get_option('wp_logs_to_parseable_options');
     $streams = isset($options['wp_logs_to_parseable_streams']) ? $options['wp_logs_to_parseable_streams'] : array();
-    $available_streams = wp_logs_to_parseable_get_available_streams();
-    if ($available_streams) {
+    $available_streams = get_option('wp_logs_to_parseable_available_streams', array());
+
+    if (!empty($available_streams)) {
         foreach ($available_streams as $stream) {
             ?>
             <label>
-                <input type="checkbox" name="wp_logs_to_parseable_options[wp_logs_to_parseable_streams][]" value="<?php echo esc_attr($stream); ?>" <?php checked(in_array($stream, $streams)); ?>>
-                <?php echo esc_html($stream); ?>
+                <input type="checkbox" name="wp_logs_to_parseable_options[wp_logs_to_parseable_streams][]" value="<?php echo esc_attr($stream['name']); ?>" <?php checked(in_array($stream['name'], $streams)); ?>>
+                <?php echo esc_html($stream['name']); ?>
             </label><br>
             <?php
         }
     } else {
-        echo '<p>' . __('Please login to view available log streams.', 'wp-logs-to-parseable') . '</p>';
+        echo '<p>' . __('Please login to fetch available log streams.', 'wp-logs-to-parseable') . '</p>';
     }
+
+    ?>
+    <button type="button" id="fetch_parseable_streams_button" class="button"><?php _e('Fetch Log Streams', 'wp-logs-to-parseable'); ?></button>
+    <?php
 }
 
 function wp_logs_to_parseable_settings_section_login_callback() {
@@ -132,33 +140,24 @@ function wp_logs_to_parseable_options_page() {
     <?php
 }
 
-function wp_logs_to_parseable_get_available_streams() {
-    $options = get_option('wp_logs_to_parseable_options');
-    $url = isset($options['wp_logs_to_parseable_url']) ? $options['wp_logs_to_parseable_url'] . '/api/v1/logstream' : '';
-    $username = isset($options['wp_logs_to_parseable_username']) ? $options['wp_logs_to_parseable_username'] : '';
-    $password = isset($options['wp_logs_to_parseable_password']) ? $options['wp_logs_to_parseable_password'] : '';
-
-    if (empty($url) || empty($username) || empty($password)) {
-        return false;
+function wp_logs_to_parseable_fetch_streams() {
+    if (!isset($_POST['url']) || !isset($_POST['username']) || !isset($_POST['password'])) {
+        wp_send_json_error(array('message' => __('Invalid request.', 'wp-logs-to-parseable')));
+        return;
     }
 
-    $response = wp_remote_get($url, array(
-        'headers' => array(
-            'Authorization' => 'Basic ' . base64_encode($username . ':' . $password)
-        )
-    ));
+    $url = sanitize_text_field($_POST['url']);
+    $username = sanitize_text_field($_POST['username']);
+    $password = sanitize_text_field($_POST['password']);
 
-    if (is_wp_error($response)) {
-        return false;
+    $api = new Parseable_API($url, $username, $password);
+    $streams = $api.fetch_log_streams();
+
+    if (!empty($streams)) {
+        update_option('wp_logs_to_parseable_available_streams', $streams);
+        wp_send_json_success($streams);
+    } else {
+        wp_send_json_error(array('message' => __('Failed to fetch streams.', 'wp-logs-to-parseable')));
     }
-
-    $body = wp_remote_retrieve_body($response);
-    $data = json_decode($body, true);
-
-    if (isset($data['streams'])) {
-        return $data['streams'];
-    }
-
-    return false;
 }
 ?>
