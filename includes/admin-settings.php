@@ -123,9 +123,31 @@ function wp_logs_to_parseable_settings_section_streams_callback() {
 }
 
 function wp_logs_to_parseable_options_validate($input) {
-    // Validate and sanitize input fields here.
-    return $input;
+    $output = array();
+
+    if (isset($input['wp_logs_to_parseable_url'])) {
+        $output['wp_logs_to_parseable_url'] = sanitize_text_field($input['wp_logs_to_parseable_url']);
+    }
+
+    if (isset($input['wp_logs_to_parseable_username'])) {
+        $output['wp_logs_to_parseable_username'] = sanitize_text_field($input['wp_logs_to_parseable_username']);
+    }
+
+    if (isset($input['wp_logs_to_parseable_password'])) {
+        $output['wp_logs_to_parseable_password'] = sanitize_text_field($input['wp_logs_to_parseable_password']);
+    }
+
+    if (isset($input['wp_logs_to_parseable_streams'])) {
+        $output['wp_logs_to_parseable_streams'] = array_map('sanitize_text_field', $input['wp_logs_to_parseable_streams']);
+    }
+
+    if (isset($input['wp_logs_to_parseable_auth'])) {
+        $output['wp_logs_to_parseable_auth'] = sanitize_text_field($input['wp_logs_to_parseable_auth']);
+    }
+
+    return $output;
 }
+
 
 function wp_logs_to_parseable_options_page() {
     ?>

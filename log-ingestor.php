@@ -25,3 +25,12 @@ function wp_logs_to_parseable_init() {
 }
 
 add_action('wp_logs_to_parseable_push_logs', 'wp_logs_to_parseable_push_logs_to_parseable');
+
+add_action('admin_enqueue_scripts', 'wp_logs_to_parseable_enqueue_scripts');
+
+function wp_logs_to_parseable_enqueue_scripts($hook) {
+    if ($hook != 'settings_page_wp-logs-to-parseable') {
+        return;
+    }
+    wp_enqueue_script('wp_logs_to_parseable_admin', plugins_url('assets/js/admin.js', __FILE__), array('jquery'), null, true);
+}

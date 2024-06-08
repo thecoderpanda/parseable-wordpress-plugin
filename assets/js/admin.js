@@ -4,6 +4,9 @@ jQuery(document).ready(function($) {
         var username = $('input[name="wp_logs_to_parseable_options[wp_logs_to_parseable_username]"]').val();
         var password = $('input[name="wp_logs_to_parseable_options[wp_logs_to_parseable_password]"]').val();
 
+        // Clear previous error messages
+        $('#parseable_streams_error').remove();
+
         $.ajax({
             url: ajaxurl,
             method: 'POST',
@@ -17,12 +20,17 @@ jQuery(document).ready(function($) {
                 if (response.success) {
                     location.reload();
                 } else {
-                    alert(response.data.message);
+                    displayError(response.data.message);
                 }
             },
             error: function() {
-                alert('<?php _e('Error fetching log streams.', 'wp-logs-to-parseable'); ?>');
+                displayError('<?php _e('Error fetching log streams.', 'wp-logs-to-parseable'); ?>');
             }
         });
     });
+
+    function displayError(message) {
+        var errorHtml = '<div id="parseable_streams_error" class="notice notice-error"><p>' + message + '</p></div>';
+        $('.wrap').prepend(errorHtml);
+    }
 });
